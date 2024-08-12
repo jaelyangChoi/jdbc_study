@@ -17,5 +17,4 @@ public class DBConnectionUtilTest {
         assertThat(connection).isNotNull();
     }
 
-
 }
