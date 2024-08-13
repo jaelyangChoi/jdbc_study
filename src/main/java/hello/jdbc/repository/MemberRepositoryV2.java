@@ -42,6 +42,34 @@ public class MemberRepositoryV2 {
 
     }
 
+    public Member findByMemberId(Connection con, String memberId) throws SQLException {
+        String sql = "select * from member where member_id = ?";
+
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            pstmt = con.prepareStatement(sql);
+            pstmt.setString(1, memberId);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                Member member = new Member();
+                member.setMemberId(rs.getString("member_id"));
+                member.setMoney(rs.getInt("money"));
+                return member;
+            } else {
+                throw new NoSuchElementException("member not found memberId = " + memberId);
+            }
+        } catch (SQLException e) {
+            log.error("db error", e);
+            throw e;
+        } finally {
+            //connection은 여기서 닫지 않는다.
+            JdbcUtils.closeResultSet(rs);
+            JdbcUtils.closeStatement(pstmt);
+        }
+    }
+
     public Member findByMemberId(String memberId) throws SQLException {
         String sql = "select * from member where member_id = ?";
 
@@ -70,40 +98,12 @@ public class MemberRepositoryV2 {
         }
     }
 
-    public Member findByMemberId(Connection con, String memberId) throws SQLException {
-        String sql = "select * from member where member_id = ?";
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            pstmt = con.prepareStatement(sql);
-            pstmt.setString(1, memberId);
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                Member member = new Member();
-                member.setMemberId(rs.getString("member_id"));
-                member.setMoney(rs.getInt("money"));
-                return member;
-            } else {
-                throw new NoSuchElementException("member not found memberId = " + memberId);
-            }
-        } catch (SQLException e) {
-            log.error("db error", e);
-            throw e;
-        } finally {
-            close(con, pstmt, rs);
-        }
-    }
-
-    public void update(String memeberId, int money) throws SQLException {
+    public void update(Connection con, String memeberId, int money) throws SQLException {
         String sql = "update member set money = ? where member_id = ?";
 
-        Connection con = null;
         PreparedStatement pstmt = null;
 
         try {
-            con = getConnection();
             pstmt = con.prepareStatement(sql);
             pstmt.setInt(1, money);
             pstmt.setString(2, memeberId);
@@ -113,7 +113,8 @@ public class MemberRepositoryV2 {
             log.error("db error", e);
             throw e;
         } finally {
-            close(con, pstmt, null);
+            //connection은 여기서 닫지 않는다.
+            JdbcUtils.closeStatement(pstmt);
         }
     }
 
